@@ -6,6 +6,8 @@
   serval/lib/unittest
   serval/spec/refinement
   (only-in racket/base parameterize struct-copy)
+
+  (prefix-in program: "./test.ll.rkt")
 )
 
 (provide (all-defined-out))
@@ -32,10 +34,11 @@
       (set-machine-retval! m result))))
 
 ; The LLVM assembly (the implementation)
-(define (@add2 base)
-  (define-value %0)
-  (set! %0 (bvadd base (bv 2 64)))
-  (ret %0))
+; Stale: now replaced by compiling test.c -> test.ll -> test.rkt
+;(define (@add2 base)
+;  (define-value %0)
+;  (set! %0 (bvadd base (bv 2 64)))
+;  (ret %0))
 
 ; Specification corresponding to the LLVM function above
 (define (spec-add2 s base)
@@ -59,7 +62,7 @@
 (define test-tests
   (test-suite+ "Test LLVM tests"
 	(test-case+ "add2 LLVM"
-		(verify-llvm-refinement spec-add2 @add2 (list (make-bv64))))
+		(verify-llvm-refinement spec-add2 program:@add2 (list (make-bv64))))
 ))
 
 (module+ test
