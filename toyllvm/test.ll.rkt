@@ -17,7 +17,7 @@
 (define-function (@add2 [%0 : (bitvector 64)])
 ; %1                                              ; preds =
   (define-label (%1) #:merge #f
-;   %2 = add nsw i64 %0, 2
+;   %2 = add i64 %0, 2
     (set! %2 (add %0 (bv 2 64)))
 ;   ret i64 %2
     (ret %2))
