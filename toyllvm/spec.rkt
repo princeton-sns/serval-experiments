@@ -5,34 +5,63 @@
   serval/lib/core
   serval/lib/unittest
   serval/spec/refinement
+  (only-in racket/base parameterize struct-copy)
 )
 
-(define (abs-function machine)
-  machine
+(provide (all-defined-out))
+
+; The abstraction function is just the identity function because we're
+; currently using the LLVM `machine` type as the state type for the spec as
+; well as the implementation
+(define (abs-function m)
+  m
 )
 
-(define (@add2 s %0)
+; This is basically copied from the certikos LLVM verifier, so I'm not 100%
+; sure what it does.
+(define (make-machine-func func)
+  ; our `func` takes some number of arguments, we want to output a function
+  ; that takes a `machine` struct and a `list` of arguments
+  (lambda (m . args)
+    ; I don't know what `parameterize` does exactly
+    (parameterize ([current-machine m])
+      ; OK, call `func` by passing in each of the elements in `args` as a
+      ; separate argument
+      (define result (apply func args))
+      ; Store the result of the function as the machine's retvalv field
+      (set-machine-retval! m result))))
+
+; The LLVM assembly (the implementation)
+(define (@add2 base)
+  (define-value %0)
+  (set! %0 (bvadd base (bv 2 64)))
   (ret %0))
 
+; Specification corresponding to the LLVM function above
+(define (spec-add2 s base)
+  set-machine-retval! s (ret (bvadd base (bv 2 64))))
+
+
+; Refine for an LLVM machine
 (define (verify-llvm-refinement spec-func impl-func [args null])
-  (define machine (make-machine '() '()))
+  (define implmachine (make-machine)) ; `machine` state used for impl
+  (define specmachine (make-machine)) ; `machine` state used for spec
   (verify-refinement
-    #:implstate machine
-    #:impl impl-func
-    #:specstate '()
+    #:implstate implmachine
+    #:impl (make-machine-func impl-func) ; go from LLVM function to machine function
+    #:specstate specmachine
     #:spec spec-func
-    #:abs abs-function
-    #:ri (lambda (args) #t)
+    #:abs abs-function ; abstraction function
+    #:ri (lambda (args) #t) ; we don't have any invariants on the machine state...
     args))
 
-(define (spec-add2 s base)
-  set-machine-retval! base)
-
+; Unit tests to run the refinement
 (define test-tests
   (test-suite+ "Test LLVM tests"
 	(test-case+ "add2 LLVM"
-		(verify-llvm-refinement spec-add2 @add2))
+		(verify-llvm-refinement spec-add2 @add2 (list (make-bv64))))
 ))
 
 (module+ test
  (time (run-tests test-tests)))
+
