@@ -36,7 +36,7 @@
       (set-machine-retval! m result))))
 
 ; The LLVM assembly (the implementation)
-; Stale: now replaced by compiling test.c -> test.ll -> test.rkt
+; Stale: now replaced by compiling test.c -> test.ll -> test.ll.rkt
 ;(define (@add2 base)
 ;  (define-value %0)
 ;  (set! %0 (bvadd base (bv 2 64)))
