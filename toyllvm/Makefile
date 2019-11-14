@@ -1,9 +1,6 @@
-LLVM_ROSETTE ?= ../llvm-rosette/llvm-rosette
+LLVM_ROSETTE ?= racket $(shell ./find-serval.rkt)/serval/bin/serval-llvm.rkt
 
 all: test.ll.rkt
-
-$(LLVM_ROSETTE):
-	make -C ../llvm-rosette
 
 test.ll: test.c
 	clang -O3 -S -emit-llvm test.c
@@ -22,8 +19,8 @@ test.globals.rkt: test.elf
 	echo "#lang reader serval/lang/dwarf" > $@
 	objdump --dwarf=info $< >> $@
 
-test.ll.rkt: test.ll $(LLVM_ROSETTE)
-	$(LLVM_ROSETTE) $< > $@
+test.ll.rkt: test.ll
+	$(LLVM_ROSETTE) < $< > $@
 
 verify: test.ll.rkt test.globals.rkt test.map.rkt
 	raco test spec.rkt
