@@ -12,11 +12,13 @@
 
 (provide (all-defined-out))
 
+(struct state (retval) #:mutable #:transparent)
+
 ; The abstraction function is just the identity function because we're
 ; currently using the LLVM `machine` type as the state type for the spec as
 ; well as the implementation
 (define (abs-function m)
-  m
+  (state (machine-retval m))
 )
 
 ; This is basically copied from the certikos LLVM verifier, so I'm not 100%
@@ -42,17 +44,17 @@
 
 ; Specification corresponding to the LLVM function above
 (define (spec-add2 s base)
-  set-machine-retval! s (ret (bvadd base (bv 2 64))))
+  (set-state-retval! s (bvadd base (bv 2 64))))
 
 
 ; Refine for an LLVM machine
 (define (verify-llvm-refinement spec-func impl-func [args null])
   (define implmachine (make-machine)) ; `machine` state used for impl
-  (define specmachine (make-machine)) ; `machine` state used for spec
+  (define specstate (state (make-bv64))) ; specification state
   (verify-refinement
     #:implstate implmachine
     #:impl (make-machine-func impl-func) ; go from LLVM function to machine function
-    #:specstate specmachine
+    #:specstate specstate
     #:spec spec-func
     #:abs abs-function ; abstraction function
     #:ri (lambda (args) #t) ; we don't have any invariants on the machine state...
