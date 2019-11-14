@@ -1,1 +1,5 @@
 test.ll
+test.elf
+test.map
+test.map.rkt
+test.globals.rkt
