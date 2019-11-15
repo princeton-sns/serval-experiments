@@ -38,6 +38,17 @@
       ; Store the result of the function as the machine's retvalv field
       (set-machine-retval! m result))))
 
+; Representation invariant:
+; "foobar" is always positive. Why? Idk... just to have _some_ invariant
+(define (rep-invariant m)
+  ; find the "foobar" block, which represents the global variable
+  (define foobar-block (find-block-by-name (machine-mregions m) 'foobar))
+  ; Read it...
+  (define foobar (mblock-iload foobar-block null))
+  ; check that foobar > 0
+  (bvsgt foobar (bv 0 64))
+)
+
 ; The LLVM assembly (the implementation)
 ; Stale: now replaced by compiling test.c -> test.ll -> test.ll.rkt
 ;(define (@add2 base)
@@ -47,7 +58,8 @@
 
 ; Specification corresponding to the LLVM function above
 (define (spec-add2 s base)
-  (set-state-foobar! s base)
+  (cond
+    [(bvsgt base (bv 22 64)) (set-state-foobar! s base)])
   (set-state-retval! s (bvadd base (bv 2 64))))
 
 
@@ -61,7 +73,7 @@
     #:specstate specstate
     #:spec spec-func
     #:abs abs-function ; abstraction function
-    #:ri (lambda (args) #t) ; we don't have any invariants on the machine state...
+    #:ri rep-invariant
     args))
 
 ; Unit tests to run the refinement
