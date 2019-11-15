@@ -6,7 +6,7 @@ test.ll: test.c
 	clang -O3 -S -emit-llvm test.c
 
 test.elf: test.c
-	clang -g -nostartfiles -o $@ $<
+	clang -O3 -g -nostartfiles -o $@ $<
 
 test.map: test.elf
 	nm --print-size --numeric-sort $< > $@
