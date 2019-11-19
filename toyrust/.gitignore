@@ -1,6 +1,7 @@
 toyrust.ll
 toyrust.ll.rkt
 toyrust
+toyrust.o
 toyrust.map
 toyrust.map.rkt
 toyrust.globals.rkt

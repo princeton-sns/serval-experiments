@@ -8,14 +8,17 @@ test.ll: test.c
 test.elf: test.c
 	clang -O3 -g -nostartfiles -o $@ $<
 
-test.map: test.elf
+test.o: test.c
+	clang -O3 -g -c -o $@ $<
+
+test.map: test.o
 	nm --print-size --numeric-sort $< > $@
 
 test.map.rkt: test.map
 	echo "#lang reader serval/lang/nm" > $@ && \
 		cat $< >> $@
 
-test.globals.rkt: test.elf
+test.globals.rkt: test.o
 	echo "#lang reader serval/lang/dwarf" > $@
 	objdump --dwarf=info $< >> $@
 
@@ -27,4 +30,4 @@ verify: test.ll.rkt test.globals.rkt test.map.rkt
 
 .PHONY: clean
 clean:
-	rm -rf test.ll test.ll.rkt test.elf test.map test.map.rkt test.globals.rkt
+	rm -rf test.ll test.ll.rkt test.elf test.o test.map test.map.rkt test.globals.rkt

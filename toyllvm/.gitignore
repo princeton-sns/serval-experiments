@@ -1,6 +1,7 @@
 test.ll
 test.ll.rkt
 test.elf
+test.o
 test.map
 test.map.rkt
 test.globals.rkt
