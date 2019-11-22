@@ -14,13 +14,14 @@
 
 (provide (all-defined-out))
 
-(struct state (retval) #:mutable #:transparent)
+(struct state (retval foobar) #:mutable #:transparent)
 
 ; The abstraction function is just the identity function because we're
 ; currently using the LLVM `machine` type as the state type for the spec as
 ; well as the implementation
 (define (abs-function m)
-  (state (machine-retval m))
+  (define foobar (find-block-by-name (machine-mregions m) '_ZN7toyrust6FOOBAR17hf887641fed376246E))
+  (state (machine-retval m) (mblock-iload foobar null))
 )
 
 ; This is basically copied from the certikos LLVM verifier, so I'm not 100%
@@ -40,7 +41,12 @@
 ; Representation invariant:
 ; "foobar" is always positive. Why? Idk... just to have _some_ invariant
 (define (rep-invariant m)
-  #t
+  ; find the "foobar" block, which represents the global variable
+  (define foobar-block (find-block-by-name (machine-mregions m) '_ZN7toyrust6FOOBAR17hf887641fed376246E))
+  ; Read it...
+  (define foobar (mblock-iload foobar-block null))
+  ; check that foobar > 0
+  (bvsgt foobar (bv 0 64))
 )
 
 ; The LLVM assembly (the implementation)
@@ -52,13 +58,15 @@
 
 ; Specification corresponding to the LLVM function above
 (define (spec-add2 s base)
+  (cond
+    [(bvsgt base (bv 22 64)) (set-state-foobar! s base)])
   (set-state-retval! s (bvadd base (bv 2 64))))
 
 
 ; Refine for an LLVM machine
 (define (verify-llvm-refinement spec-func impl-func [args null])
   (define implmachine (make-machine program:symbols program:globals)) ; `machine` state used for impl
-  (define specstate (state (make-bv64))) ; specification state
+  (define specstate (state (make-bv64) (make-bv64))) ; specification state
   (verify-refinement
     #:implstate implmachine
     #:impl (make-machine-func impl-func) ; go from LLVM function to machine function
